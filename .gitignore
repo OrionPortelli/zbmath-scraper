@@ -1,1 +1,4 @@
 .venv/
+.vscode/
+.DS_Store
+src/__pycache__/
