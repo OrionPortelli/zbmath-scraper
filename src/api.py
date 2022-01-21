@@ -1,27 +1,30 @@
 from flask import Flask
 from flask_restful import Api, Resource
-import requests
+from scraper import Scraper
 
 app = Flask(__name__)
 api = Api(app)
 
-ROOT = "https://oai.zbmath.org/v1/"
+ROOT = "https://zbmath.org/?q=an:"
 
 class HelloWorld(Resource):
     def get(self):
         return {'hello':'world'}
 
-    # TODO: Find what fields are required, parse XML to get them
-    # TODO: Learn how to use parameters, will I need to do everything in webscraping anyway?
     # Currently returns entire text string of xml from API call
     # ID is DE number for the record, not the Zbl code
 class Records(Resource):
-    # Returns a JSON object containing the article identifier, classifications, date, language
-    # using the zbMATH API.
-    # TODO: Make the default version of this use scraping, non-software version use lxml
+    """Resource for retrieving zbMATH records via webscraping"""
     def get(self, id):
-        response = requests.get(f'{ROOT}?verb=GetRecord&identifier=oai:zbmath.org:{id}&metadataPrefix=oai_dc')
-        return response.text
+        """Retrieves the key fields from a given zbMATH record
+        
+        Args:
+            id: The DE number of the record in question (Zbl code also accepted)
+        
+        Returns: JSON serializable dictionary representation of the records key fields
+        """
+        s = Scraper(f'{ROOT}{id}')
+        return s.getInfoJSON()
 
 api.add_resource(HelloWorld, '/')
 api.add_resource(Records, '/records/<int:id>')
