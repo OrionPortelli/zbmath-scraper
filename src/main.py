@@ -3,12 +3,14 @@ import requests
 
 # Test file for functions for now
 
-def scraper_test():
-    s = Scraper("https://zbmath.org/?q=an:1200.35057")
+def scraper_test(link):
+    s = Scraper(link)
+
     print("Software:", s.getSoftware())
     print("MSC:", s.getMSC())
     print("Date:", s.getDate())
     print("Language:", s.getLanguage())
+    print("DE Number:", s.getDENumber())
 
 def api_test1():
     BASE = 'http://127.0.0.1:5000/'
@@ -28,6 +30,8 @@ def get(id):
     return response
 
 if __name__ == "__main__":
-    #print(get(5797851).text)
     #api_test1()
-    scraper_test()
+    links = ["https://zbmath.org/?q=an:1200.35057", "https://zbmath.org/?q=an:07428002"]
+    #scraper_test(links[0])
+    s = Scraper(links[1])
+    print(s.getInfoJSON())
