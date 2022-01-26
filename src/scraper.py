@@ -47,5 +47,5 @@ class Scraper:
 
     def getInfoJSON(self):
         """Returns a JSON encodable object with all relevant information from the Record"""
-        return {"id": self.getDENumber(), "software": self.getSoftware(), "msc": self.getMSC(),
+        return {"id": self.getDENumber(), "software": self.getSoftware(), "msc": list(self.getMSC()),
             "language": self.getLanguage(), "date": self.getDate()}
