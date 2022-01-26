@@ -27,6 +27,7 @@ class Classes(Resource):
     """Resource for retrieving available MSC codes using zbMATH api"""
     def get(self):
         """Retrives all available 2 digit MSC codes on zbMATH"""
+        print("Collecting MSC codes")
         PAGES = 7 # 64 MSC codes and 10 per request (page)
         classes = {}
         for i in range(PAGES):
@@ -42,10 +43,10 @@ class Classes(Resource):
                 classes[s[0].text] = s[1].text[6:]
 
             token = sets[-1].text 
-            print(f"Page {i+1} complete")
+            print(f"\tPage {i+1} complete")
         # Add the last item on the last page
         s = sets[-1]
-        classes[s[0].text] = s[1].text
+        classes[s[0].text] = s[1].text[4:]
 
         return classes
 

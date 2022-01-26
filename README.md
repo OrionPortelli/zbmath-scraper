@@ -8,7 +8,7 @@ Python wrapper for zbMATH API with additional web-scraping tools for swMATH.
 
 **Description**
 
-Retrieve certain data from a given zbMATH record
+Retrieve the following data from a given zbMATH record
 
 **Definition**
 `GET records/{id}`
@@ -16,7 +16,39 @@ Retrieve certain data from a given zbMATH record
 **Response**
 ```
 {
+    "id": "5797851",
+    "software": {
+        "554": "Mathematica"
+    },
+    "msc": [
+        "35",
+        "42",
+        "34",
+        "65",
+        "33"
+    ],
+    "language": "English",
+    "date": 2010
+}
+```
 
+### `GET /classes`
+
+**Description**
+
+Retrieve all high level MSC classifications from zbMATH
+
+**Definition**
+`GET classes`
+
+**Response**
+```
+{
+    "00": "General and overarching topics; collections",
+    "01": "History and biography",
+    ...
+    "97": "Mathematics education",
+    "JFM": "Jahrbuch f\u00fcr Mathematik"
 }
 ```
 
