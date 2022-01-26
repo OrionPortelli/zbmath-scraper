@@ -4,12 +4,14 @@ from lxml import etree
 
 # Test file for functions for now
 
-def scraper_test():
-    s = Scraper("https://zbmath.org/?q=an:1200.35057")
+def scraper_test(link):
+    s = Scraper(link)
+
     print("Software:", s.getSoftware())
     print("MSC:", s.getMSC())
     print("Date:", s.getDate())
     print("Language:", s.getLanguage())
+    print("DE Number:", s.getDENumber())
 
 def msc_compact():
     PAGES = 7 # 64 MSC codes and 10 per request (page)
