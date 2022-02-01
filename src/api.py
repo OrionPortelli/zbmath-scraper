@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Api, Resource
 from lxml import etree
 import requests
@@ -50,8 +50,37 @@ class Classes(Resource):
 
         return classes
 
+class IdentifiersCount(Resource):
+    """Resource for retrieving the number of zbMATH records with the given filter"""
+    def get(self):
+        """Retrieves the integer number of records that satisfy the given filters"""
+        print("Retrieving identifiers quantity")
+
+        # Retrieve query parameters (filters)
+        # TODO: Check if these need validation or not
+        msc = request.args.get('set', type = str)
+        start = request.args.get('start', type = str)
+        end = request.args.get('end', type = str)
+        print(f"Filters:\n\tset={msc} | start={start} | end={end}")
+
+        # Build zbMATH API request url
+        req_url = (
+            "https://oai.zbmath.org/v1/?verb=ListIdentifiers&metadataPrefix=oai_dc"
+            + (f"&set={msc}" if msc else "")
+            + (f"&from={start}" if start else "")
+            + (f"&until={end}" if end else "")
+        )
+
+        # Request & parse XML to retrieve complete count 
+        xml = requests.get(req_url).content
+        root = etree.fromstring(xml)
+        count = root[2][-1].get('completeListSize')
+
+        return count
+
 api.add_resource(Records, '/records/<int:id>')
 api.add_resource(Classes, '/classes')
+api.add_resource(IdentifiersCount, '/identifiers/count')
 
 if __name__ == "__main__":
     app.run(debug=True)
