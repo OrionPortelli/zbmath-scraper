@@ -19,9 +19,16 @@ class Scraper:
         self.soup = BeautifulSoup(html, "lxml")
 
     def getSoftware(self):
-        """Retrives a dict with the id and names of the software used for the Record"""
-        software = self.soup.find("div", class_="software").find_all("a")
-        return {s['href'][self.SOFT_LEN:] : s.text for s in software}
+        """Retrives a dict of all software cited in the Record
+        
+        Returns: A dict with the ID and name of all software used in the record, or None
+        """
+        root = self.soup.find("div", class_="software")
+        # Check if the record contains software
+        if root:
+            software = root.find_all("a")
+            return {s['href'][self.SOFT_LEN:] : s.text for s in software}
+        return None
 
     def getMSC(self):
         """Returns a set with the base level MSC assigned to the Record"""
@@ -39,7 +46,7 @@ class Scraper:
         return lang.text[1:-1]
 
     def getDENumber(self):
-        """Returns the integer DE number ID of the record"""
+        """Returns the integer DE number ID of the Record"""
         # DE code grabbed directly from zbMath API call for XML content
         DE = (self.soup.find("div", class_="functions clearfix")
             .find("a", class_="xml"))
