@@ -12,7 +12,6 @@ API_ROOT = "https://oai.zbmath.org/v1/?verb="
 TAG_PREFIX = "{http://www.openarchives.org/OAI/2.0/}" # Prefix of tags from zbMATH API
 ID_PREFIX = len("oai:zbmath.org:") # Number of characters before a given identifier
 
-# TODO: Record scraper can't handle records with no software
 class Records(Resource):
     """Resource for retrieving zbMATH records via webscraping"""
     def get(self, id):
@@ -84,6 +83,7 @@ class IdentifiersCount(Resource):
 # TODO: Edge cases:
 # TODO: Pages with 0 id's
 # TODO: Pages with no resumption token
+# TODO: Limited return size?
 class Identifiers(Resource):
     """Resource for retrieving the all identifiers of zbMATH records given filters"""
     def get(self):
