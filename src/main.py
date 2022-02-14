@@ -1,6 +1,6 @@
 from scraper import Scraper
 import requests
-from lxml import etree
+import api_client
 
 # Test file for functions for now
 
@@ -13,10 +13,6 @@ def scraper_test(link):
     print("Language:", s.getLanguage())
     print("DE Number:", s.getDENumber())
 
-def no_software_test(link):
-    s = Scraper(link)
-    print(s.getInfoJSON())
-
 if __name__ == "__main__":
-    no_software_test("https://zbmath.org/?q=an%3A7465767")
+    api_client 
     
