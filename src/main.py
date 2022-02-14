@@ -16,5 +16,5 @@ def scraper_test(link):
 
 if __name__ == "__main__":
     #print(apy.getClasses())
-    print(apy.getRecord(TEST_RECORDS[1]))
-    
+    print("RECORD:", apy.getRecord(TEST_RECORDS[1]))
+    print("COUNT:", apy.getIDCount(msc="05", start="2020-01", end="2020-02"))

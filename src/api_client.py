@@ -5,7 +5,6 @@ from lxml import etree
 RECORD_ROOT = "https://zbmath.org/?q=an:"
 API_ROOT = "https://oai.zbmath.org/v1/?verb="
 
-# Check if generators would be useful for identifiers
 def getRecord(id):
     """Retrieves the main fields from a given zbMATH record
     
@@ -41,3 +40,20 @@ def getClasses():
     classes[s[0].text] = s[1].text[4:]
 
     return classes
+
+def getIDCount(msc=None, start=None, end=None):
+    """Retrieves the integer number of records that satisfy the given filters"""
+    # Build zbMATH API request url
+    req_url = (
+        f"{API_ROOT}ListIdentifiers&metadataPrefix=oai_dc"
+        + (f"&set={msc}" if msc else "")
+        + (f"&from={start}" if start else "")
+        + (f"&until={end}" if end else "")
+    )
+
+    # Request & parse XML 
+    xml = requests.get(req_url).content
+    root = etree.fromstring(xml)
+    count = root[2][-1].get('completeListSize')
+
+    return count
