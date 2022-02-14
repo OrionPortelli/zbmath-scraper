@@ -42,7 +42,7 @@ class Scraper:
 
     def getLanguage(self):
         """Returns a string with the language used in the Record"""
-        lang = self.soup.find("div", class_="title").find("i")
+        lang = self.soup.find("h2", class_="title").find("i")
         return lang.text[1:-1]
 
     def getDENumber(self):

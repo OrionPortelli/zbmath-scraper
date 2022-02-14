@@ -1,8 +1,9 @@
 from scraper import Scraper
 import requests
-import api_client
+import api_client as apy
 
 # Test file for functions for now
+TEST_RECORDS = [5797851, 7367256]
 
 def scraper_test(link):
     s = Scraper(link)
@@ -14,5 +15,6 @@ def scraper_test(link):
     print("DE Number:", s.getDENumber())
 
 if __name__ == "__main__":
-    api_client 
+    #print(apy.getClasses())
+    print(apy.getRecord(TEST_RECORDS[1]))
     
