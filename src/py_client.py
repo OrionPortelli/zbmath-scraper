@@ -25,31 +25,33 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
         + (f"&until={end}" if end else "")
     )
    
-    with JsonBuilder as out:
+    with JsonBuilder(outpath) as out:
         # Request XML of first page
         xml = requests.get(req_url).content
         root = etree.fromstring(xml)[2]
+        
+        # Setup & populate JSON file with metadata
+        count = root[-1].get('completeListSize')
+        out.format_ids(set, start, end, count)
 
-        # Get first page ID's
+        # Get first page ID's & write to file
         ids = []
         token = root[-1].text if root[-1].tag == f"{TAG_PREFIX}resumptionToken" else None
         for i in range(len(root) - 1):
             ids.append(int(root[i][0].text[ID_PREFIX:]))
+        out.add_ID_page(ids)
 
         # Collect ID's from subsequent pages
-        degub = 1
         while token:
-            print("page =", degub)
+            ids = []
             xml = requests.get(req_url + f"&resumptionToken={token}").content
             root = etree.fromstring(xml)[2]
-            for i in range(len(root) - 1):
-                ids.append(int(root[i][0].text[ID_PREFIX:]))
+
             token = root[-1].text if root[-1].tag == f"{TAG_PREFIX}resumptionToken" else None
-            degub += 1
-        print("escaped loop")
+            for i in range(len(root) - 1):
+                ids.append(root[i][0].text[ID_PREFIX:])
+            out.add_ID_page(ids)
 
-        # Append final ID
-        ids.append(int(root[-1][0].text[ID_PREFIX:]))
-
-        res = {'start' : start, 'end' : end, 'ids' : ids}
-        return res
+        # Append final ID & close
+        out.add_ID(root[-1][0].text[ID_PREFIX:])
+        out.close()
