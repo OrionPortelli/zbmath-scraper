@@ -1,6 +1,6 @@
 from scraper import Scraper
-import requests
 from lxml import etree
+import requests
 
 RECORD_ROOT = "https://zbmath.org/?q=an:"
 API_ROOT = "https://oai.zbmath.org/v1/?verb="
@@ -41,12 +41,20 @@ def getClasses():
 
     return classes
 
-def getIDCount(msc=None, start=None, end=None):
-    """Retrieves the integer number of records that satisfy the given filters"""
+def getIDCount(set=None, start=None, end=None):
+    """Retrieves the integer number of records that satisfy the given filters
+    
+    Args:
+        set: String MSC set code to filter ID's by
+        start: String start date of filtering range (format 1970-01-01T00:00:00Z)
+        end: String end date of filtering range (format 1970-01-01T00:00:00Z)
+
+    Returns: Integer number of zbMATH records which match the given filters
+    """
     # Build zbMATH API request url
     req_url = (
         f"{API_ROOT}ListIdentifiers&metadataPrefix=oai_dc"
-        + (f"&set={msc}" if msc else "")
+        + (f"&set={set}" if set else "")
         + (f"&from={start}" if start else "")
         + (f"&until={end}" if end else "")
     )
