@@ -1,4 +1,4 @@
-import api_client as apy
+import api_client as api
 from json_builder import JsonBuilder
 from lxml import etree
 import requests
@@ -19,7 +19,7 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
     """
     # Build zbMATH API request base url
     req_url = (
-        f"{apy.API_ROOT}ListIdentifiers&metadataPrefix=oai_dc"
+        f"{api.API_ROOT}ListIdentifiers&metadataPrefix=oai_dc"
         + (f"&set={set}" if set else "")
         + (f"&from={start}" if start else "")
         + (f"&until={end}" if end else "")
@@ -36,7 +36,7 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
 
         # Get first page ID's & write to file
         ids = []
-        token = root[-1].text if root[-1].tag == f"{TAG_PREFIX}resumptionToken" else None
+        token = root[-1].text if root[-1].tag == f"{api.TAG_PREFIX}resumptionToken" else None
         for i in range(len(root) - 1):
             ids.append(int(root[i][0].text[ID_PREFIX:]))
         out.add_ID_page(ids)
@@ -47,7 +47,7 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
             xml = requests.get(req_url + f"&resumptionToken={token}").content
             root = etree.fromstring(xml)[2]
 
-            token = root[-1].text if root[-1].tag == f"{TAG_PREFIX}resumptionToken" else None
+            token = root[-1].text if root[-1].tag == f"{api.TAG_PREFIX}resumptionToken" else None
             for i in range(len(root) - 1):
                 ids.append(root[i][0].text[ID_PREFIX:])
             out.add_ID_page(ids)

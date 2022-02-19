@@ -4,6 +4,7 @@ import requests
 
 RECORD_ROOT = "https://zbmath.org/?q=an:"
 API_ROOT = "https://oai.zbmath.org/v1/?verb="
+TAG_PREFIX = "{http://www.openarchives.org/OAI/2.0/}"
 
 def getRecord(id):
     """Retrieves the main fields from a given zbMATH record
@@ -61,7 +62,16 @@ def getIDCount(set=None, start=None, end=None):
 
     # Request & parse XML 
     xml = requests.get(req_url).content
-    root = etree.fromstring(xml)
-    count = root[2][-1].get('completeListSize')
+    root = etree.fromstring(xml)[2]
 
-    return count
+    # Check for errors
+    if root.tag == f"{TAG_PREFIX}error":
+        if root.text == "noRecordsMatch":
+            return 0
+        raise ValueError("Bad argument (invalid filters).")
+
+    # If multiple pages present, get count directly
+    if root[-1].tag == f"{TAG_PREFIX}resumptionToken":
+        return root[-1].get('completeListSize')
+
+    return len(root)

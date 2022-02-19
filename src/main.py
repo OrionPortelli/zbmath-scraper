@@ -1,5 +1,5 @@
 from scraper import Scraper
-import api_client as apy
+import api_client as api
 import py_client
 from json_builder import JsonBuilder
 
@@ -28,6 +28,4 @@ def client_test():
     py_client.getIdentifiers(set='05', start='2020-02-01', end='2020-02-14')
 
 if __name__ == "__main__":
-    #print(apy.getIDCount(set='05', start='2020-02-01', end='2020-02-14'))
-    # Expecting 191 results
-    client_test()
+    pass

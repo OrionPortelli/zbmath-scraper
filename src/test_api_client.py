@@ -13,24 +13,27 @@ class TestAPIClient(unittest.TestCase):
 
     def test_count_none(self):
         """Tests ID count when no results match the filters (0 ID's)"""
-        self.assertEquals(api.getIDCount(set='05', start='2020-01-01', end='2020-01-02'), 0)
+        self.assertEqual(api.getIDCount(set='05', start='2020-01-01', end='2020-01-02'), 0)
 
     def test_count_flipped_dates(self):
         """Tests ID count when the start occurs after the end date (0 ID's)"""
-        self.assertEquals(api.getIDCount(set='05', start='2020-01-02', end='2020-01-01'), 0)
+        self.assertEqual(api.getIDCount(set='05', start='2020-01-02', end='2020-01-01'), 0)
 
     # getCount: Invalid filters
     def test_count_bad_msc(self):
         """Tests ID count when inputting invalid msc code filter"""
-        self.assertIsNone(api.getIDCount(set='what', start='2020-01', end='2020-02'))
+        with self.assertRaises(ValueError, msg="Bad argument (invalid filters)"):
+            api.getIDCount(set='what', start='2020-01', end='2020-02')
 
     def test_count_bad_start(self):
         """Tests ID count when inputting invalid start filter"""
-        self.assertIsNone(api.getIDCount(set='05', start='what', end='2020-02'))
+        with self.assertRaises(ValueError, msg="Bad argument (invalid filters)"):
+            api.getIDCount(set='05', start='what', end='2020-02')
 
     def test_count_bad_end(self):
         """Tests ID count when inputting invalid end filter"""
-        self.assertIsNone(api.getIDCount(set='05', start='2020-01', end='what'))
+        with self.assertRaises(ValueError, msg="Bad argument (invalid filters)"):
+            api.getIDCount(set='05', start='2020-01', end='what')
 
     # getClasses: Returns correct amount (slow test)
     #def test_classes(self):
