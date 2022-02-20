@@ -31,7 +31,7 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
         root = etree.fromstring(xml)[2]
         
         # Setup & populate JSON file with metadata
-        count = root[-1].get('completeListSize')
+        count = api.count(root)
         out.format_ids(set, start, end, count)
 
         # Get first page ID's & write to file

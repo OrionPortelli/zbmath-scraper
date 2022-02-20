@@ -24,8 +24,12 @@ def json_test():
         out.close()
 
 
-def client_test():
-    py_client.getIdentifiers(set='05', start='2020-02-01', end='2020-02-14')
+def client_test_multipage():
+    py_client.getIdentifiers(outpath="data/multipage.json", set='05', start='2020-02-01', end='2020-02-14')
+
+def client_test_onepage():
+    py_client.getIdentifiers(outpath="data/onepage.json", set='05', start='2020-01-01', end='2020-01-04')
 
 if __name__ == "__main__":
-    pass
+    client_test_multipage()
+    client_test_onepage()
