@@ -1,7 +1,11 @@
 import api_client as api
 from json_builder import JsonBuilder
+from scraper import Scraper
 from lxml import etree
 import requests
+import json
+
+import time
 
 TAG_PREFIX = "{http://www.openarchives.org/OAI/2.0/}" # zbMATH API tag prefix
 ID_PREFIX = len("oai:zbmath.org:") # Num characters before an identifier
@@ -16,6 +20,9 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
         set: String MSC set code to filter ID's by
         start: String start date of filtering range (format 1970-01-01T00:00:00Z)
         end: String end date of filtering range (format 1970-01-01T00:00:00Z)
+
+    Raises:
+        ValueError: Bad arguments (invalid filters).
     """
     # Build zbMATH API request base url
     req_url = (
@@ -55,3 +62,32 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
         # Append final ID & close
         out.add_ID(root[-1][0].text[ID_PREFIX:])
         out.close()
+
+def scrapeRecords(inpath, outpath="data/records.json"):
+    """
+    Scrapes key information from all records in the input file and writes it to
+    a json file.
+
+    Args:
+        inpath: String input filepath of JSON file with record ID's
+        outpath: String output filepath
+    """
+    print("Scraping records:")
+    start = time.perf_counter()
+
+    with open(inpath) as j:
+        ids = json.load(j)
+    
+    with JsonBuilder(outpath) as out:
+        # Setup output file
+        out.format_records(ids['set'], ids['start'], ids['end'], ids['count'])
+        
+        # Scrape & write all records
+        for id in ids['identifiers'][:-1]:
+            record = api.getRecord(id)
+            out.add_record(json.dumps(record))
+            out.add_comma()
+        record = api.getRecord(ids['identifiers'][-1])
+        out.add_record(json.dumps(record))
+
+    print(f"\tScraped {ids['count']} records in {time.perf_counter() - start}s")

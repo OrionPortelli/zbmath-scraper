@@ -33,7 +33,7 @@ class JsonBuilder:
 
     def add_ID_page(self, id_list):
         """
-        Write ID's from a list. Intended for use with page wise list of ID's.
+        Write ID's from a list. Intended for use with pagewise list of ID's.
         Appends a comma to the end of the page, so add_ID should be used
         for the final ID in the list.
 
@@ -50,6 +50,38 @@ class JsonBuilder:
             id: String ID to be added to the JSON list
         """
         self.out.write(id)
+
+    def format_records(self, set, start, end, count):
+        """
+        Populates the initial lines of a JSON file to prepare for dynamic
+        storage of a list of info about zbMATH records.
+
+        Args:
+            set: String MSC set code ID's are filtered to
+            start: String start date of filtering range (format 1970-01-01T00:00:00Z)
+            end: String end date of filtering range (format 1970-01-01T00:00:00Z)
+            count: String number of records which match the given filters  
+        """
+        self.out.write('{')
+        self.stack.append('}')
+        self.out.write(f'"set":"{set}", ')
+        self.out.write(f'"start":"{start}", ')
+        self.out.write(f'"end":"{end}", ')
+        self.out.write(f'"count":{count}, ')
+        self.out.write('"records":[')
+        self.stack.append(']')
+    
+    def add_record(self, record):
+        """Write the information of a scraped record.
+
+        Args:
+            record: JSON string of record info (scraped using Scraper instance)
+        """
+        self.out.write(record)
+
+    def add_comma(self):
+        """Writes a comma to the JSON output file"""
+        self.out.write(',')
 
     def __enter__(self):
         return self
