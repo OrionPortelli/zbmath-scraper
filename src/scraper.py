@@ -50,7 +50,7 @@ class Scraper:
         # DE code grabbed directly from zbMath API call for XML content
         DE = (self.soup.find("div", class_="functions clearfix")
             .find("a", class_="xml"))
-        return DE["href"][-7:]
+        return int(DE["href"][-7:])
 
     def getInfoJSON(self):
         """Returns a JSON encodable object with all relevant information from the Record"""
