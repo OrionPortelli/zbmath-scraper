@@ -24,6 +24,9 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
     Raises:
         ValueError: Bad arguments (invalid filters).
     """
+    print("Collecting ID's:")
+    t = time.perf_counter()
+    
     # Build zbMATH API request base url
     req_url = (
         f"{api.API_ROOT}ListIdentifiers&metadataPrefix=oai_dc"
@@ -62,6 +65,8 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
         # Append final ID & close
         out.add_ID(root[-1][0].text[ID_PREFIX:])
         out.close()
+    
+    print(f"\tCollected {count} ID's in {time.perf_counter() - t}s")
 
 def scrapeRecords(inpath, outpath="data/records.json"):
     """
@@ -73,7 +78,7 @@ def scrapeRecords(inpath, outpath="data/records.json"):
         outpath: String output filepath
     """
     print("Scraping records:")
-    start = time.perf_counter()
+    t = time.perf_counter()
 
     with open(inpath) as j:
         ids = json.load(j)
@@ -83,11 +88,18 @@ def scrapeRecords(inpath, outpath="data/records.json"):
         out.format_records(ids['set'], ids['start'], ids['end'], ids['count'])
         
         # Scrape & write all records
+        i = 0
         for id in ids['identifiers'][:-1]:
+            # Debug print every thousand ID's
+            i += 1
+            if i % 1000 == 0:
+                print(f"Scraped: {i}/{ids['count']}")
+
+            # Scrape record
             record = api.getRecord(id)
             out.add_record(json.dumps(record))
             out.add_comma()
         record = api.getRecord(ids['identifiers'][-1])
         out.add_record(json.dumps(record))
 
-    print(f"\tScraped {ids['count']} records in {time.perf_counter() - start}s")
+    print(f"\tScraped {ids['count']} records in {time.perf_counter() - t}s")

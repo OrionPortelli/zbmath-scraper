@@ -3,7 +3,6 @@ import api_client as api
 import py_client as py
 from json_builder import JsonBuilder
 
-
 def exec():
     """Basic command line interface for users to user the scraper (filters required)"""
     print("|--------------------------------|")
