@@ -37,8 +37,8 @@ class Scraper:
 
     def getDate(self):
         """Returns the integer year the Record was published"""
-        date = self.soup.find("a", title="Articles in this Issue")
-        return int(date.text[-5:-1])
+        date = self.soup.find("span", class_="tex2jax_ignore").text[-21:-17]
+        return date
 
     def getLanguage(self):
         """Returns a string with the language used in the Record"""
