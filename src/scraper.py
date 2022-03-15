@@ -37,8 +37,19 @@ class Scraper:
 
     def getDate(self):
         """Returns the integer year the Record was published"""
-        date = self.soup.find("span", class_="tex2jax_ignore").text[-21:-17]
-        return date
+        try:
+            # Try to get date from CITE popout
+            date = self.soup.find("span", class_="tex2jax_ignore")
+            if date:
+                return int(date.text[-21:-17])
+            # Otherwise try to find date elsewhere
+            date = self.soup.find("a", title="Articles in this Issue")
+            if date:
+                return int(date.text[-6:-2])
+            # Otherwise return no date found
+            return None
+        except:
+            return None
 
     def getLanguage(self):
         """Returns a string with the language used in the Record"""
