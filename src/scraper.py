@@ -42,14 +42,14 @@ class Scraper:
             # Try to get date from CITE popout
             date = self.soup.find("span", class_="tex2jax_ignore")
             if date:
-                if re.match("((20)[012]\d)", date.text[-21:-17]):
+                if re.match("(((20)[012]\d)|((19)\d{2}))", date.text[-21:-17]):
                     return int(date.text[-21:-17])
                 else:
                     return int(date.text[-5:-1])
             # Otherwise try to find date using articles in the issue
             date = self.soup.find("a", title="Articles in this Issue")
             if date:
-                if re.match("((20)[012]\d)", date.text[-6:-2]):
+                if re.match("((((20)[012]\d)|((19)\d{2}))", date.text[-6:-2]):
                     return int(date.text[-6:-2])
                 else:
                     return int(date.text[-5:-1])

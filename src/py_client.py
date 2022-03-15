@@ -92,7 +92,7 @@ def scrapeRecords(inpath, outpath="data/records.json"):
         for id in ids['identifiers'][:-1]:
             # Debug print every thousand ID's
             i += 1
-            if i % 1000 == 0:
+            if i % 500 == 0:
                 print(f"Scraped: {i}/{ids['count']}")
 
             # Scrape record
@@ -102,4 +102,4 @@ def scrapeRecords(inpath, outpath="data/records.json"):
         record = api.getRecord(ids['identifiers'][-1])
         out.add_record(json.dumps(record))
 
-    print(f"\tScraped {ids['count']} records in {time.perf_counter() - t}s")
+    print(f"\tScraped {ids['count']} records in {time.perf_counter() - t:.2f}s")
