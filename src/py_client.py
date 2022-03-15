@@ -66,7 +66,7 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
         out.add_ID(root[-1][0].text[ID_PREFIX:])
         out.close()
     
-    print(f"\tCollected {count} ID's in {time.perf_counter() - t}s")
+    print(f"\tCollected {count} ID's in {time.perf_counter() - t:.2f}s")
 
 def scrapeRecords(inpath, outpath="data/records.json"):
     """
@@ -97,6 +97,7 @@ def scrapeRecords(inpath, outpath="data/records.json"):
 
             # Scrape record
             record = api.getRecord(id)
+            record[id] = id # Set ID manually as failsafe
             out.add_record(json.dumps(record))
             out.add_comma()
         record = api.getRecord(ids['identifiers'][-1])

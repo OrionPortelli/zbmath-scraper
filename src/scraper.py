@@ -24,17 +24,25 @@ class Scraper:
         
         Returns: A dict with the ID and name of all software used in the record, or None
         """
-        root = self.soup.find("div", class_="software")
-        # Check if the record contains software
-        if root:
-            software = root.find_all("a")
-            return {s['href'][self.SOFT_LEN:] : s.text for s in software}
-        return None
+        try:
+            root = self.soup.find("div", class_="software")
+            # Check if the record contains software
+            if root:
+                software = root.find_all("a")
+                return {s['href'][self.SOFT_LEN:] : s.text for s in software}
+            return None
+        except Exception as e:
+            print(f"Exception scraping Software for {self.link}\n{e}")
+            return None
 
     def getMSC(self):
         """Returns a set with the base level MSC assigned to the Record"""
-        classes = self.soup.find("div", class_="classification").find_all("a")
-        return set([c.text[0:2] for c in classes])
+        try:
+            classes = self.soup.find("div", class_="classification").find_all("a")
+            return set([c.text[0:2] for c in classes])
+        except Exception as e:
+            print(f"Exception scraping MSC for {self.link}\n{e}")
+            return set([])
 
     def getDate(self):
         """Returns the integer year the Record was published"""
@@ -49,27 +57,36 @@ class Scraper:
             # Otherwise try to find date using articles in the issue
             date = self.soup.find("a", title="Articles in this Issue")
             if date:
-                if re.match("((((20)[012]\d)|((19)\d{2}))", date.text[-6:-2]):
+                if re.match("(((20)[012]\d)|((19)\d{2}))", date.text[-6:-2]):
                     return int(date.text[-6:-2])
                 else:
                     return int(date.text[-5:-1])
             # Otherwise return no date found
             return None
-        except ValueError as e:
-            print(e, self.link)
+        except Exception as e:
+            print(f"Exception scraping Date for {self.link}\n{e}")
             return None
 
     def getLanguage(self):
         """Returns a string with the language used in the Record"""
-        lang = self.soup.find("h2", class_="title").find("i")
-        return lang.text[1:-1]
+        try:
+            lang = self.soup.find("h2", class_="title").find("i")
+            return lang.text[1:-1]
+        except Exception as e:
+            print(f"Exception scraping Language for {self.link}\n{e}")
+            return None
+
 
     def getDENumber(self):
         """Returns the integer DE number ID of the Record"""
         # DE code grabbed directly from zbMath API call for XML content
-        DE = (self.soup.find("div", class_="functions clearfix")
-            .find("a", class_="xml"))
-        return int(DE["href"][-7:])
+        try:
+            DE = (self.soup.find("div", class_="functions clearfix")
+                .find("a", class_="xml"))
+            return int(DE["href"][-7:])
+        except Exception as e:
+            print(f"Exception scraping DE Number for {self.link}\n{e}")
+            return None
 
     def getInfoJSON(self):
         """Returns a JSON encodable object with all relevant information from the Record"""
