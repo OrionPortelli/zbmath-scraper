@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+import re # Regex match date
 
 class Scraper:
     """Scrapes information about a given record from its page HTML
@@ -41,14 +42,21 @@ class Scraper:
             # Try to get date from CITE popout
             date = self.soup.find("span", class_="tex2jax_ignore")
             if date:
-                return int(date.text[-21:-17])
-            # Otherwise try to find date elsewhere
+                if re.match("((20)[012]\d)", date.text[-21:-17]):
+                    return int(date.text[-21:-17])
+                else:
+                    return int(date.text[-5:-1])
+            # Otherwise try to find date using articles in the issue
             date = self.soup.find("a", title="Articles in this Issue")
             if date:
-                return int(date.text[-6:-2])
+                if re.match("((20)[012]\d)", date.text[-6:-2]):
+                    return int(date.text[-6:-2])
+                else:
+                    return int(date.text[-5:-1])
             # Otherwise return no date found
             return None
-        except:
+        except ValueError as e:
+            print(e, self.link)
             return None
 
     def getLanguage(self):
