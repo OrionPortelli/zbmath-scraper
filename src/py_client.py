@@ -86,11 +86,15 @@ def scrapeRecords(inpath, outpath="data/records.json"):
     with JsonBuilder(outpath) as out:
         # Setup output file
         out.format_records(ids['set'], ids['start'], ids['end'], ids['count'])
+
+        # Scrape first & write w/o preceding comma:
+        record = api.getRecord(ids['identifiers'][0])
+        out.add_record(json.dumps(record))
         
-        # Scrape & write all records
+        # Scrape & write remaining records
         i = 0
-        for id in ids['identifiers'][:-1]:
-            # Debug print every thousand ID's
+        for id in ids['identifiers'][1:]:
+            # Debug print every 500 ID's
             i += 1
             if i % 500 == 0:
                 print(f"Scraped: {i}/{ids['count']}")
@@ -98,9 +102,47 @@ def scrapeRecords(inpath, outpath="data/records.json"):
             # Scrape record
             record = api.getRecord(id)
             record[id] = id # Set ID manually as failsafe
-            out.add_record(json.dumps(record))
             out.add_comma()
-        record = api.getRecord(ids['identifiers'][-1])
-        out.add_record(json.dumps(record))
-
+            out.add_record(json.dumps(record))
     print(f"\tScraped {ids['count']} records in {time.perf_counter() - t:.2f}s")
+
+def continueScrape(idpath, recordpath):
+    """
+    Given a complete list of ID's and an incomplete list of records,
+    continues scraping missing records.
+
+    Args:
+        idpath: String filepath for the complete list of record ID's
+        recordpath: String filepath for the incomplete list of records (output written here)
+    """
+    print("Scraping records:")
+    t = time.perf_counter()
+
+    # Load ID's & existing records
+    with open(idpath) as j:
+        ids = set(json.load(j)['identifiers'])
+    with open(recordpath) as j:
+        records = json.load(j)
+
+    # Use set of scraped ID's to find the remaining ones
+    scraped_ids = {r['id'] for r in records['records']}
+    remaining = ids - scraped_ids
+
+    with JsonBuilder(recordpath) as out:
+        # Setup output file
+        out.format_continue(json.dumps(records))
+
+        # Scrape & write remaining records
+        i = 0
+        for id in remaining:
+            # Debug print every 500 ID's
+            i += 1
+            if i % 500 == 0:
+                print(f"Scraped: {i}/{len(remaining)}")
+
+            # Scrape record
+            record = api.getRecord(id)
+            record[id] = id # Set ID manually as failsafe
+            out.add_comma()
+            out.add_record(json.dumps(record))
+    print(f"\tScraped {len(remaining)} records in {time.perf_counter() - t:.2f}s")

@@ -83,6 +83,17 @@ class JsonBuilder:
         """Writes a comma to the JSON output file"""
         self.out.write(',')
 
+    def format_continue(self, existing):
+        """Populates a JSON file with the existing information about scraped
+        records while leaving it open for additional records.
+
+        Args:
+            existing: String of existing JSON records (including brackets)
+        """
+        self.out.write(existing[:-2])
+        self.stack.append(']')
+        self.stack.append('}')
+    
     def __enter__(self):
         return self
     
