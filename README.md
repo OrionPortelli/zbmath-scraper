@@ -1,8 +1,38 @@
 # CS4098 zbMath Analytics
 
-Python wrapper for zbMATH API with additional web-scraping tools for swMATH.
+Python wrapper for zbMATH API with additional web-scraping tools for swMATH. Composed of 3 main parts:
 
-## REST API Documentation
+
+1. **API Client:** A Python client for the aforementioned REST api. All calls are RESTful and share match those in the above API.
+2. **Python Client:** A non-REST API for python users to write data to a file
+3. **Flask-RESTful API:** A REST api which can be hosted then used to make various requests.
+
+## 1. API Client
+
+A basic python facing client for RESTful access to zbMATH information. Contains the following function (detailed functionality in docstrings)
+
+`getRecord(id)`
+Retrieves the main fields from a given zbMATH record.
+
+`getClasses()`
+Retrives all available 2 digit MSC codes on zbMATH.
+
+`getIDCount(set, start, end)`
+Returns the integer number of records that satisfy the given filters.
+
+## 2. Python Client
+A non-REST python client API for mass collection of zbMATH data and writing to JSON files.
+
+`getIdentifiers(outpath, set, start, end)`
+Writes all DE numbers for zbMATH records with the given filters to the specified file.
+
+`scrapeRecords(inpath, outpath)`
+Scrapes key information from all records in the input file and writes it to a json file.
+
+`continueScrape()`
+TBC
+
+## 3. REST API Documentation
 
 ### `GET /records/{id}`
 
