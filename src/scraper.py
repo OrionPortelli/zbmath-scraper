@@ -2,6 +2,8 @@ from bs4 import BeautifulSoup
 import requests
 import re # Regex match date
 
+LIMIT_MSG = "only 2000 requests per day per ip"
+
 class Scraper:
     """Scrapes information about a given record from its page HTML
      
@@ -17,6 +19,8 @@ class Scraper:
         """Makes a scraper for a record with the provided link"""
         self.link = link
         html = requests.get(link).text
+        if html == LIMIT_MSG:
+            raise LimitException()
         self.soup = BeautifulSoup(html, "lxml")
 
     def getSoftware(self):
@@ -76,7 +80,6 @@ class Scraper:
             print(f"Exception scraping Language for {self.link}\n{e}")
             return None
 
-
     def getDENumber(self):
         """Returns the integer DE number ID of the Record"""
         # DE code grabbed directly from zbMath API call for XML content
@@ -92,3 +95,8 @@ class Scraper:
         """Returns a JSON encodable object with all relevant information from the Record"""
         return {"id": self.getDENumber(), "software": self.getSoftware(), "msc": list(self.getMSC()),
             "language": self.getLanguage(), "date": self.getDate()}
+
+class LimitException(Exception):
+    """Custom exception when the zbMATH 2000 request daily limit is exceeded"""
+    def __init__(self, msg="Daily 2000 request limit exceeded", *args, **kwargs):
+        super().__init__(msg, *args, **kwargs)

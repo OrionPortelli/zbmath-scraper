@@ -4,7 +4,7 @@ import py_client as pyc
 
 sets = {'05', '11', '20', '62', '65'}
 start = '2010'
-end = '2017'
+end = '2015'
 
 for s in sets:
     print(f"Collecting ID's for set {s}")
