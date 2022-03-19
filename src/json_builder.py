@@ -91,8 +91,8 @@ class JsonBuilder:
             existing: String of existing JSON records (including brackets)
         """
         self.out.write(existing[:-2])
-        self.stack.append(']')
         self.stack.append('}')
+        self.stack.append(']')
     
     def __enter__(self):
         return self
