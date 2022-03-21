@@ -101,7 +101,7 @@ def scrapeRecords(inpath, outpath="data/records.json"):
 
             # Scrape record
             record = api.getRecord(id)
-            record[id] = id # Set ID manually as failsafe
+            record['id'] = id # Set ID manually as failsafe
             out.add_comma()
             out.add_record(json.dumps(record))
     print(f"\tScraped {ids['count']} records in {time.perf_counter() - t:.2f}s")
