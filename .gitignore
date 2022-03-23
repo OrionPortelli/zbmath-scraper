@@ -2,6 +2,3 @@
 .vscode/
 .DS_Store
 src/__pycache__/
-data/
-20_backup.json
-src/continue.py
