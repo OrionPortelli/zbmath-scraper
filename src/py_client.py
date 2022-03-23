@@ -68,7 +68,7 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
     
     print(f"\tCollected {count} ID's in {time.perf_counter() - t:.2f}s")
 
-def scrapeRecords(inpath, outpath="data/records.json"):
+def scrapeRecords(inpath, outpath="data/records.json", limit=1900):
     """
     Scrapes key information from all records in the input file and writes it to
     a json file.
@@ -76,6 +76,7 @@ def scrapeRecords(inpath, outpath="data/records.json"):
     Args:
         inpath: String input filepath of JSON file with record ID's
         outpath: String output filepath
+        limit: Integer limit on the number of records scraped (for rate limit avoidance)
     """
     print("Scraping records:")
     t = time.perf_counter()
@@ -83,6 +84,7 @@ def scrapeRecords(inpath, outpath="data/records.json"):
     with open(inpath) as j:
         ids = json.load(j)
     
+    i = 0
     with JsonBuilder(outpath) as out:
         # Setup output file
         out.format_records(ids['set'], ids['start'], ids['end'], ids['count'])
@@ -92,21 +94,23 @@ def scrapeRecords(inpath, outpath="data/records.json"):
         out.add_record(json.dumps(record))
         
         # Scrape & write remaining records
-        i = 0
+        
         for id in ids['identifiers'][1:]:
-            # Debug print every 500 ID's
+            # Debug print every 250 ID's
             i += 1
-            if i % 500 == 0:
+            if i % 250 == 0:
                 print(f"Scraped: {i}/{ids['count']}")
+            if limit and i >= limit:
+                break
 
             # Scrape record
             record = api.getRecord(id)
             record['id'] = id # Set ID manually as failsafe
             out.add_comma()
             out.add_record(json.dumps(record))
-    print(f"\tScraped {ids['count']} records in {time.perf_counter() - t:.2f}s")
+    print(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
 
-def continueScrape(idpath, recordpath):
+def continueScrape(idpath, recordpath, limit=1900):
     """
     Given a complete list of ID's and an incomplete list of records,
     continues scraping missing records.
@@ -114,6 +118,7 @@ def continueScrape(idpath, recordpath):
     Args:
         idpath: String filepath for the complete list of record ID's
         recordpath: String filepath for the incomplete list of records (output written here)
+        limit: Integer limit on the number of records scraped (for rate limit avoidance)
     """
     print("Scraping records:")
     t = time.perf_counter()
@@ -128,21 +133,23 @@ def continueScrape(idpath, recordpath):
     scraped_ids = {r['id'] for r in records['records']}
     remaining = ids - scraped_ids
 
+    i = 0
     with JsonBuilder(recordpath) as out:
         # Setup output file
         out.format_continue(json.dumps(records))
 
         # Scrape & write remaining records
-        i = 0
         for id in remaining:
-            # Debug print every 500 ID's
+            # Debug print every 250 ID's
             i += 1
-            if i % 500 == 0:
+            if i % 250 == 0:
                 print(f"Scraped: {i}/{len(remaining)}")
+            if limit and i >= limit:
+                break
 
             # Scrape record
             record = api.getRecord(id)
-            record[id] = id # Set ID manually as failsafe
+            record['id'] = id # Set ID manually as failsafe
             out.add_comma()
             out.add_record(json.dumps(record))
-    print(f"\tScraped {len(remaining)} records in {time.perf_counter() - t:.2f}s")
+    print(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
