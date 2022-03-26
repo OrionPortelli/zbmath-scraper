@@ -68,7 +68,7 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
     
     print(f"\tCollected {count} ID's in {time.perf_counter() - t:.2f}s")
 
-def scrapeRecords(inpath, outpath="data/records.json", limit=1900):
+def scrapeRecords(inpath, outpath="data/records.json", limit=1990):
     """
     Scrapes key information from all records in the input file and writes it to
     a json file.
@@ -77,9 +77,13 @@ def scrapeRecords(inpath, outpath="data/records.json", limit=1900):
         inpath: String input filepath of JSON file with record ID's
         outpath: String output filepath
         limit: Integer limit on the number of records scraped (for rate limit avoidance)
+
+    Returns:
+        True if all records were scraped, False if the limit was reached.
     """
     print("Scraping records:")
     t = time.perf_counter()
+    limitReached = False # True if limit reached before scraping all records
 
     with open(inpath) as j:
         ids = json.load(j)
@@ -101,6 +105,7 @@ def scrapeRecords(inpath, outpath="data/records.json", limit=1900):
             if i % 250 == 0:
                 print(f"Scraped: {i}/{ids['count']}")
             if limit and i >= limit:
+                limitReached = True
                 break
 
             # Scrape record
@@ -109,8 +114,9 @@ def scrapeRecords(inpath, outpath="data/records.json", limit=1900):
             out.add_comma()
             out.add_record(json.dumps(record))
     print(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
+    return limitReached
 
-def continueScrape(idpath, recordpath, limit=1900):
+def continueScrape(idpath, recordpath, limit=1990):
     """
     Given a complete list of ID's and an incomplete list of records,
     continues scraping missing records.
@@ -119,9 +125,13 @@ def continueScrape(idpath, recordpath, limit=1900):
         idpath: String filepath for the complete list of record ID's
         recordpath: String filepath for the incomplete list of records (output written here)
         limit: Integer limit on the number of records scraped (for rate limit avoidance)
+
+    Returns:
+        True if all records were scraped, False if the limit was reached.
     """
     print("Scraping records:")
     t = time.perf_counter()
+    limitReached = False # True if limit reached before scraping all records
 
     # Load ID's & existing records
     with open(idpath) as j:
@@ -145,6 +155,7 @@ def continueScrape(idpath, recordpath, limit=1900):
             if i % 250 == 0:
                 print(f"Scraped: {i}/{len(remaining)}")
             if limit and i >= limit:
+                limitReached = True
                 break
 
             # Scrape record
@@ -153,3 +164,35 @@ def continueScrape(idpath, recordpath, limit=1900):
             out.add_comma()
             out.add_record(json.dumps(record))
     print(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
+    return limitReached
+
+def fullCollect(idpath, recordpath, set=None, start=None, end=None):
+    """
+    The complete record scraping pipeline. Collects ID's, then scrapes records.
+    Additionally, uses advanced techniques to avoid the request limit and allow
+    scraping of the full collection of records.
+
+    Args:
+        idpath: String filepath for the complete list of record ID's
+        recordpath: String filepath for the incomplete list of records (output written here)
+        limit: Integer limit on the number of records scraped (for rate limit avoidance)
+    """
+    API_LINK = "https://oai.zbmath.org/"
+
+    # Collect ID's
+    getIdentifiers(outpath=idpath, set=set, start=start, end=end)
+
+    # Scrape records until none left
+    t = time.perf_counter()
+    complete = scrapeRecords(inpath=idpath, outpath=recordpath)
+    while not complete:
+        # Trigger 600/min request limit on API (overrides 2000/day limit)
+        print(requests.get(API_LINK).text)
+
+        # Wait out limit
+        time.sleep(180)
+        print(requests.get(API_LINK).text) # Fail that resets cooldown
+        print(requests.get(API_LINK).text[0:10]) # Check it worked
+        complete = continueScrape(idpath=idpath, recordpath=recordpath)
+    
+    print(f"Scraped all records in {time.perf_counter() - t} time")
