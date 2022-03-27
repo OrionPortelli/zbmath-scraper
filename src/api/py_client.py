@@ -262,4 +262,7 @@ def cleanRecord(record):
     lang = root.find(f"{OAI_DC_TAG}language").text
     if lang != DISCLAIMER:
         record['language'] = root.find(f"{OAI_DC_TAG}language").text
+    #elif len(record['language']) > 20:
+    #    lang = record['language']
+    #    record['language'] = lang[:lang.index('\n')]
     return record
