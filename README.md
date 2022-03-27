@@ -2,10 +2,13 @@
 
 Python wrapper for zbMATH API with additional web-scraping tools for swMATH. Composed of 3 main parts:
 
-
 1. **API Client:** A Python client for the aforementioned REST api. All calls are RESTful and share match those in the above API.
 2. **Python Client:** A non-REST API for python users to write data to a file
 3. **Flask-RESTful API:** A REST api which can be hosted then used to make various requests.
+
+## 0. Setup
+
+Use `pip install .` to install the package and all its dependencies.
 
 ## 1. API Client
 
