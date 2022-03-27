@@ -24,6 +24,9 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
     Raises:
         ValueError: Bad arguments (invalid filters).
     """
+    print("Collecting ID's:")
+    t = time.perf_counter()
+    
     # Build zbMATH API request base url
     req_url = (
         f"{api.API_ROOT}ListIdentifiers&metadataPrefix=oai_dc"
@@ -62,8 +65,10 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
         # Append final ID & close
         out.add_ID(root[-1][0].text[ID_PREFIX:])
         out.close()
+    
+    print(f"\tCollected {count} ID's in {time.perf_counter() - t:.2f}s")
 
-def scrapeRecords(inpath, outpath="data/records.json"):
+def scrapeRecords(inpath, outpath="data/records.json", limit=1990):
     """
     Scrapes key information from all records in the input file and writes it to
     a json file.
@@ -71,23 +76,123 @@ def scrapeRecords(inpath, outpath="data/records.json"):
     Args:
         inpath: String input filepath of JSON file with record ID's
         outpath: String output filepath
+        limit: Integer limit on the number of records scraped (for rate limit avoidance)
+
+    Returns:
+        True if all records were scraped, False if the limit was reached.
     """
     print("Scraping records:")
-    start = time.perf_counter()
+    t = time.perf_counter()
+    limitReached = False # True if limit reached before scraping all records
 
     with open(inpath) as j:
         ids = json.load(j)
     
+    i = 0
     with JsonBuilder(outpath) as out:
         # Setup output file
         out.format_records(ids['set'], ids['start'], ids['end'], ids['count'])
-        
-        # Scrape & write all records
-        for id in ids['identifiers'][:-1]:
-            record = api.getRecord(id)
-            out.add_record(json.dumps(record))
-            out.add_comma()
-        record = api.getRecord(ids['identifiers'][-1])
-        out.add_record(json.dumps(record))
 
-    print(f"\tScraped {ids['count']} records in {time.perf_counter() - start}s")
+        # Scrape first & write w/o preceding comma:
+        record = api.getRecord(ids['identifiers'][0])
+        out.add_record(json.dumps(record))
+        
+        # Scrape & write remaining records
+        
+        for id in ids['identifiers'][1:]:
+            # Debug print every 250 ID's
+            i += 1
+            if i % 250 == 0:
+                print(f"Scraped: {i}/{ids['count']}")
+            if limit and i >= limit:
+                limitReached = True
+                break
+
+            # Scrape record
+            record = api.getRecord(id)
+            record['id'] = id # Set ID manually as failsafe
+            out.add_comma()
+            out.add_record(json.dumps(record))
+    print(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
+    return limitReached
+
+def continueScrape(idpath, recordpath, limit=1990):
+    """
+    Given a complete list of ID's and an incomplete list of records,
+    continues scraping missing records.
+
+    Args:
+        idpath: String filepath for the complete list of record ID's
+        recordpath: String filepath for the incomplete list of records (output written here)
+        limit: Integer limit on the number of records scraped (for rate limit avoidance)
+
+    Returns:
+        True if all records were scraped, False if the limit was reached.
+    """
+    print("Scraping records:")
+    t = time.perf_counter()
+    limitReached = False # True if limit reached before scraping all records
+
+    # Load ID's & existing records
+    with open(idpath) as j:
+        ids = set(json.load(j)['identifiers'])
+    with open(recordpath) as j:
+        records = json.load(j)
+
+    # Use set of scraped ID's to find the remaining ones
+    scraped_ids = {r['id'] for r in records['records']}
+    remaining = ids - scraped_ids
+
+    i = 0
+    with JsonBuilder(recordpath) as out:
+        # Setup output file
+        out.format_continue(json.dumps(records))
+
+        # Scrape & write remaining records
+        for id in remaining:
+            # Debug print every 250 ID's
+            i += 1
+            if i % 250 == 0:
+                print(f"Scraped: {i}/{len(remaining)}")
+            if limit and i >= limit:
+                limitReached = True
+                break
+
+            # Scrape record
+            record = api.getRecord(id)
+            record['id'] = id # Set ID manually as failsafe
+            out.add_comma()
+            out.add_record(json.dumps(record))
+    print(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
+    return limitReached
+
+def fullCollect(idpath, recordpath, set=None, start=None, end=None):
+    """
+    The complete record scraping pipeline. Collects ID's, then scrapes records.
+    Additionally, uses advanced techniques to avoid the request limit and allow
+    scraping of the full collection of records.
+
+    Args:
+        idpath: String filepath for the complete list of record ID's
+        recordpath: String filepath for the incomplete list of records (output written here)
+        limit: Integer limit on the number of records scraped (for rate limit avoidance)
+    """
+    API_LINK = "https://oai.zbmath.org/"
+
+    # Collect ID's
+    getIdentifiers(outpath=idpath, set=set, start=start, end=end)
+
+    # Scrape records until none left
+    t = time.perf_counter()
+    complete = scrapeRecords(inpath=idpath, outpath=recordpath)
+    while not complete:
+        # Trigger 600/min request limit on API (overrides 2000/day limit)
+        print(requests.get(API_LINK).text)
+
+        # Wait out limit
+        time.sleep(180)
+        print(requests.get(API_LINK).text) # Fail that resets cooldown
+        print(requests.get(API_LINK).text[0:10]) # Check it worked
+        complete = continueScrape(idpath=idpath, recordpath=recordpath)
+    
+    print(f"Scraped all records in {time.perf_counter() - t} time")
