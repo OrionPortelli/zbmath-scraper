@@ -37,7 +37,7 @@ class TestAPIClient(unittest.TestCase):
 
     # getRecord: Valid records
     def test_record_valid(self):
-        """Tests that the default example record can be scraped without error"""
+        """Tests that the default valid record can be scraped without error"""
         api.getRecord(5797851)
 
     def test_record_no_soft(self):
@@ -45,7 +45,18 @@ class TestAPIClient(unittest.TestCase):
         api.getRecord(7465767)
 
     # getRecord: Invalid records
-    # ...TBD
+    def test_record_missing(self):
+        """Tests that identifiers corresponding to no records returns an empty record"""
+        record = api.getRecord(1111111)
+        empty = {'id': None, 'software': None, 'msc': [], 'language': None, 'date': None}
+        self.assertEqual(record, empty)
+
+
+    def test_bad_id(self):
+        """Tests that attempting to grab a record with a bad ID returns an empty record"""
+        record = api.getRecord("whoops")
+        empty = {'id': None, 'software': None, 'msc': [], 'language': None, 'date': None}
+        self.assertEqual(record, empty)
 
 if __name__ == "__main__":
     unittest.main()
