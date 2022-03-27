@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Module uses reset skip to collect all records in the desired filters
+# Uses rate limit skip to collect all records in the desired filters
 from src.api.py_client import fullCollect, cleanDataset
 
 # Gets a dirty date

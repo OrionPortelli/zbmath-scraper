@@ -239,7 +239,12 @@ def cleanDataset(inpath, outpath):
         out.add_record(json.dumps(r))
 
         # Iterate over records to retrieve fields
+        i = 0
         for r in records['records'][1:]:
+            i += 1
+            if i % 500 == 0:
+                print(f"Cleaned {i}/{records['count']}")
+            
             # Create request URL using prefix template
             r = cleanRecord(r)
             out.add_comma()
