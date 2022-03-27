@@ -2,3 +2,4 @@
 .vscode/
 .DS_Store
 src/__pycache__/
+src/api/__pycache__/

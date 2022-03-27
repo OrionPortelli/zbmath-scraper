@@ -1,7 +1,9 @@
-from scraper import Scraper
+from api.scraper import Scraper
+
 from lxml import etree
 import requests
 
+# Constants
 RECORD_ROOT = "https://zbmath.org/?q=an:"
 API_ROOT = "https://oai.zbmath.org/v1/?verb="
 TAG_PREFIX = "{http://www.openarchives.org/OAI/2.0/}"

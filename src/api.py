@@ -1,8 +1,10 @@
+# This file is deprecated and does not fully work
+
 from flask import Flask, request
 from flask_restful import Api, Resource
 from lxml import etree
 import requests
-from scraper import Scraper
+from api.scraper import Scraper
 
 app = Flask(__name__)
 api = Api(app)

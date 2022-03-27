@@ -1,16 +1,18 @@
-import api_client as api
-from json_builder import JsonBuilder
-from scraper import Scraper
+from api import api_client
+from api.json_builder import JsonBuilder
+
 from lxml import etree
 import requests
 import json
-
 import time
 
+# Constants
 TAG_PREFIX = "{http://www.openarchives.org/OAI/2.0/}" # zbMATH API tag prefix
+OAI_DC_TAG = "{http://purl.org/dc/elements/1.1/}" # zbMATH API OAI_DC tag prefix
 ID_PREFIX = len("oai:zbmath.org:") # Num characters before an identifier
+GET_RECORD_PREFIX = f"{api_client.API_ROOT}GetRecord&identifier=oai:zbmath.org:"
 
-def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
+def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None, verbose=True):
     """
     Writes all DE numbers for zbMATH records with the given filters to the
     specified file.
@@ -23,13 +25,18 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
 
     Raises:
         ValueError: Bad arguments (invalid filters).
+
+    Returns:
+        The number of ID's collected
     """
-    print("Collecting ID's:")
+    # Lambda function to disable printing when verbosity is False
+    vprint = print if verbose else lambda *a, **k: None
+    vprint("Collecting ID's:")
     t = time.perf_counter()
     
     # Build zbMATH API request base url
     req_url = (
-        f"{api.API_ROOT}ListIdentifiers&metadataPrefix=oai_dc"
+        f"{api_client.API_ROOT}ListIdentifiers&metadataPrefix=oai_dc"
         + (f"&set={set}" if set else "")
         + (f"&from={start}" if start else "")
         + (f"&until={end}" if end else "")
@@ -41,12 +48,12 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
         root = etree.fromstring(xml)[2]
         
         # Setup & populate JSON file with metadata
-        count = api.count(root)
+        count = api_client.count(root)
         out.format_ids(set, start, end, count)
 
         # Get first page ID's & write to file
         ids = []
-        token = root[-1].text if root[-1].tag == f"{api.TAG_PREFIX}resumptionToken" else None
+        token = root[-1].text if root[-1].tag == f"{api_client.TAG_PREFIX}resumptionToken" else None
         for i in range(len(root) - 1):
             ids.append(int(root[i][0].text[ID_PREFIX:]))
         out.add_ID_page(ids)
@@ -57,7 +64,7 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
             xml = requests.get(req_url + f"&resumptionToken={token}").content
             root = etree.fromstring(xml)[2]
 
-            token = root[-1].text if root[-1].tag == f"{api.TAG_PREFIX}resumptionToken" else None
+            token = root[-1].text if root[-1].tag == f"{api_client.TAG_PREFIX}resumptionToken" else None
             for i in range(len(root) - 1):
                 ids.append(root[i][0].text[ID_PREFIX:])
             out.add_ID_page(ids)
@@ -65,10 +72,10 @@ def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None):
         # Append final ID & close
         out.add_ID(root[-1][0].text[ID_PREFIX:])
         out.close()
-    
-    print(f"\tCollected {count} ID's in {time.perf_counter() - t:.2f}s")
+    vprint(f"\tCollected {count} ID's in {time.perf_counter() - t:.2f}s")
+    return count
 
-def scrapeRecords(inpath, outpath="data/records.json", limit=1990):
+def scrapeRecords(inpath, outpath="data/records.json", limit=1990, verbose=True):
     """
     Scrapes key information from all records in the input file and writes it to
     a json file.
@@ -81,42 +88,43 @@ def scrapeRecords(inpath, outpath="data/records.json", limit=1990):
     Returns:
         True if all records were scraped, False if the limit was reached.
     """
-    print("Scraping records:")
+    # Lambda function to disable printing when verbosity is False
+    vprint = print if verbose else lambda *a, **k: None
+    vprint("Scraping records:")
     t = time.perf_counter()
     limitReached = False # True if limit reached before scraping all records
 
     with open(inpath) as j:
         ids = json.load(j)
     
-    i = 0
     with JsonBuilder(outpath) as out:
         # Setup output file
         out.format_records(ids['set'], ids['start'], ids['end'], ids['count'])
 
         # Scrape first & write w/o preceding comma:
-        record = api.getRecord(ids['identifiers'][0])
+        record = api_client.getRecord(ids['identifiers'][0])
         out.add_record(json.dumps(record))
         
         # Scrape & write remaining records
-        
+        i = 0
         for id in ids['identifiers'][1:]:
             # Debug print every 250 ID's
             i += 1
-            if i % 250 == 0:
+            if verbose and i % 250 == 0:
                 print(f"Scraped: {i}/{ids['count']}")
             if limit and i >= limit:
                 limitReached = True
                 break
 
             # Scrape record
-            record = api.getRecord(id)
+            record = api_client.getRecord(id)
             record['id'] = id # Set ID manually as failsafe
             out.add_comma()
             out.add_record(json.dumps(record))
-    print(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
-    return limitReached
+    vprint(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
+    return not limitReached
 
-def continueScrape(idpath, recordpath, limit=1990):
+def continueScrape(idpath, recordpath, limit=1990, verbose=True):
     """
     Given a complete list of ID's and an incomplete list of records,
     continues scraping missing records.
@@ -125,14 +133,17 @@ def continueScrape(idpath, recordpath, limit=1990):
         idpath: String filepath for the complete list of record ID's
         recordpath: String filepath for the incomplete list of records (output written here)
         limit: Integer limit on the number of records scraped (for rate limit avoidance)
+        verbose: Boolean determining whether to print debug statements
 
     Returns:
         True if all records were scraped, False if the limit was reached.
     """
-    print("Scraping records:")
+    # Lambda function to disable printing when verbosity is False
+    vprint = print if verbose else lambda *a, **k: None
+    vprint("Continuing scraping records:")
     t = time.perf_counter()
     limitReached = False # True if limit reached before scraping all records
-
+    
     # Load ID's & existing records
     with open(idpath) as j:
         ids = set(json.load(j)['identifiers'])
@@ -143,27 +154,28 @@ def continueScrape(idpath, recordpath, limit=1990):
     scraped_ids = {r['id'] for r in records['records']}
     remaining = ids - scraped_ids
 
-    i = 0
+    
     with JsonBuilder(recordpath) as out:
         # Setup output file
         out.format_continue(json.dumps(records))
 
         # Scrape & write remaining records
+        i = 0
         for id in remaining:
             # Debug print every 250 ID's
             i += 1
-            if i % 250 == 0:
+            if verbose and i % 250 == 0:
                 print(f"Scraped: {i}/{len(remaining)}")
             if limit and i >= limit:
                 limitReached = True
                 break
 
             # Scrape record
-            record = api.getRecord(id)
+            record = api_client.getRecord(id)
             record['id'] = id # Set ID manually as failsafe
             out.add_comma()
             out.add_record(json.dumps(record))
-    print(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
+    vprint(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
     return limitReached
 
 def fullCollect(idpath, recordpath, set=None, start=None, end=None):
@@ -180,19 +192,74 @@ def fullCollect(idpath, recordpath, set=None, start=None, end=None):
     API_LINK = "https://oai.zbmath.org/"
 
     # Collect ID's
-    getIdentifiers(outpath=idpath, set=set, start=start, end=end)
+    count = getIdentifiers(outpath=idpath, set=set, start=start, end=end)
 
-    # Scrape records until none left
+    # Scrape first batch of records
+    print('Scraping records')
     t = time.perf_counter()
-    complete = scrapeRecords(inpath=idpath, outpath=recordpath)
+    complete = scrapeRecords(inpath=idpath, outpath=recordpath, verbose=False)
+    
+    # Repeat the rate limit skip until all records scraped
+    i = 1
     while not complete:
+        print(f'Scraped {1990 * i}/{count}')
         # Trigger 600/min request limit on API (overrides 2000/day limit)
-        print(requests.get(API_LINK).text)
+        requests.get(API_LINK)
 
         # Wait out limit
         time.sleep(180)
-        print(requests.get(API_LINK).text) # Fail that resets cooldown
-        print(requests.get(API_LINK).text[0:10]) # Check it worked
-        complete = continueScrape(idpath=idpath, recordpath=recordpath)
+        requests.get(API_LINK) # Fail that resets cooldown
+        requests.get(API_LINK).text[0:10] # Check it worked
+        complete = continueScrape(idpath=idpath, recordpath=recordpath, verbose=False)
+        i += 1
     
-    print(f"Scraped all records in {time.perf_counter() - t} time")
+    print(f"Scraped {count}/{count} records in {time.perf_counter() - t:.2f}s")
+
+def cleanDataset(inpath, outpath):
+    """
+    Cleans the date and language fields of a set of records using the zbMATH API.
+
+    Args:
+        inpath: String filepath for the complete list of dirty input records
+        outpath: String filepath for the output list of cleaned records
+    """
+    print("Cleaning record dates & languages:")
+    t = time.perf_counter()
+
+    # Load scraped records
+    with open(inpath) as j:
+        records = json.load(j)
+
+    with JsonBuilder(outpath) as out:
+        # Setup output file
+        out.format_records(records['set'], records['start'], records['end'], records['count'])
+
+        # Write first record without preceeding comma
+        r = cleanRecord(records['records'][0])
+        out.add_record(json.dumps(r))
+
+        # Iterate over records to retrieve fields
+        for r in records['records'][1:]:
+            # Create request URL using prefix template
+            r = cleanRecord(r)
+            out.add_comma()
+            out.add_record(json.dumps(r))
+    print(f"Cleaned {records['count']} records in {time.perf_counter() - t:.2f}s")
+
+def cleanRecord(record):
+    """
+    Helper function for cleanDataset which cleans an individual records by
+    getting the correct date and language fields using the zbMATH API.
+
+    Args:
+        record: Dictionary record to be cleaned
+    """
+    DISCLAIMER = "zbMATH Open Web Interface contents unavailable due to conflicting licenses."
+    req_url = f"{GET_RECORD_PREFIX}{record['id']}&metadataPrefix=oai_dc"
+    xml = requests.get(req_url).content
+    root = etree.fromstring(xml)[2][0][1][0]
+    record['date'] = int(root.find(f"{OAI_DC_TAG}date").text)
+    lang = root.find(f"{OAI_DC_TAG}language").text
+    if lang != DISCLAIMER:
+        record['language'] = root.find(f"{OAI_DC_TAG}language").text
+    return record

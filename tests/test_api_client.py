@@ -1,5 +1,5 @@
 import unittest
-import api_client as api
+import src.api.api_client as api
 
 class TestAPIClient(unittest.TestCase):
     # getCount: Valid filters
@@ -34,11 +34,6 @@ class TestAPIClient(unittest.TestCase):
         """Tests ID count when inputting invalid end filter"""
         with self.assertRaises(ValueError, msg="Bad argument (invalid filters)"):
             api.getIDCount(set='05', start='2020-01', end='what')
-
-    # getClasses: Returns correct amount (slow test)
-    #def test_classes(self):
-    #    """Tests getClasses returns the correct number of classes ("""
-    #    self.assertEquals(len(api.getClasses()), 64)
 
     # getRecord: Valid records
     def test_record_valid(self):
