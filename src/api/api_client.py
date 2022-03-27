@@ -1,4 +1,4 @@
-from api.scraper import Scraper
+from src.api.scraper import Scraper
 
 from lxml import etree
 import requests

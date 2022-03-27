@@ -3,3 +3,4 @@
 .DS_Store
 src/__pycache__/
 src/api/__pycache__/
+cs4098_analytics.egg-info

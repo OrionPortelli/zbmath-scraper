@@ -1,5 +1,5 @@
-from api import api_client
-from api.json_builder import JsonBuilder
+from src.api import api_client
+from src.api.json_builder import JsonBuilder
 
 from lxml import etree
 import requests
