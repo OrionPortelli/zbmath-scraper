@@ -7,5 +7,5 @@ setup(
     author='Orion Portelli',
     author_email='jeffersonorionportelli@gmail.com',
     packages=find_packages(),
-    install_requires=['beatifulsoup4', 'lxml', 'request', 'Flask', 'Flask-RESTful']
+    install_requires=['beatifulsoup4', 'lxml', 'request', 'Flask', 'Flask-RESTful', 'pandas', 'matplotlib']
 )
