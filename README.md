@@ -6,9 +6,15 @@ Python wrapper for zbMATH API with additional web-scraping tools for swMATH. Com
 2. **Python Client:** A non-REST API for python users to write data to a file
 3. **Flask-RESTful API:** A REST api which can be hosted then used to make various requests.
 
-## 0. Setup
+## 0. Quickstart
+
+Use `pip install -r requirements.txt` to install required modules.
 
 Use `pip install .` to install the package and all its dependencies.
+
+Use `import src.api.py_client as py_client` to import tools
+
+Use `py_client.fullCollect(idpath=f'data/{set}_ids.json', recordpath=f'data/{set}_records.json', set=set, start=start, end=end)` to begin scraping
 
 ## 1. API Client
 
@@ -26,16 +32,23 @@ Returns the integer number of records that satisfy the given filters.
 ## 2. Python Client
 A non-REST python client API for mass collection of zbMATH data and writing to JSON files.
 
-`getIdentifiers(outpath, set, start, end)`
+`getIdentifiers(outpath, set, start, end, verbose)`
 Writes all DE numbers for zbMATH records with the given filters to the specified file.
 
-`scrapeRecords(inpath, outpath)`
+`scrapeRecords(inpath, outpath, limit, verbose)`
 Scrapes key information from all records in the input file and writes it to a json file.
 
-`continueScrape()`
-TBC
+`continueScrape(inpath, outpath, limit, verbose)`
+Continues to scrape the remaining records from a given ID set
 
-## 3. REST API Documentation
+`fullScrape(idpath, recordpath, set, start, end, cont)`
+Scrapes all records in the given parameters using rate limit avoidance
+
+`cleanDataset(inpath, outpath, strict=False)`
+Cleans the date and language fields in a dataset
+
+
+## 3. REST API Documentation (outdated)
 
 ### `GET /records/{id}`
 
