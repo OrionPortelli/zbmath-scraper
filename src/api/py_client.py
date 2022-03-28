@@ -175,18 +175,26 @@ def continueScrape(idpath, recordpath, limit=1990, verbose=True):
             out.add_comma()
             out.add_record(json.dumps(record))
     vprint(f"\tScraped {i} records in {time.perf_counter() - t:.2f}s")
-    return limitReached
+    return not limitReached
 
-def fullCollect(idpath, recordpath, set=None, start=None, end=None):
+def fullCollect(idpath, recordpath, set=None, start=None, end=None, cont=False):
     """
     The complete record scraping pipeline. Collects ID's, then scrapes records.
     Additionally, uses advanced techniques to avoid the request limit and allow
-    scraping of the full collection of records.
+    scraping of the full collection of records. 
+    
+    Note: The continue version is slightly experimental. It works as desire,
+    but the debug prints are not accurate and it recollects the ID's in order to obtain
+    a count.
 
     Args:
         idpath: String filepath for the complete list of record ID's
         recordpath: String filepath for the incomplete list of records (output written here)
-        limit: Integer limit on the number of records scraped (for rate limit avoidance)
+        set: String MSC set code to filter ID's by
+        start: String start date of filtering range (format 1970-01-01T00:00:00Z)
+        end: String end date of filtering range (format 1970-01-01T00:00:00Z)
+        cont: Boolean whether the function continues scraping or starts from the beginning
+
     """
     API_LINK = "https://oai.zbmath.org/"
 
@@ -196,7 +204,10 @@ def fullCollect(idpath, recordpath, set=None, start=None, end=None):
     # Scrape first batch of records
     print('Scraping records')
     t = time.perf_counter()
-    complete = scrapeRecords(inpath=idpath, outpath=recordpath, verbose=False)
+    complete = (
+        scrapeRecords(inpath=idpath, outpath=recordpath, verbose=False) if not cont else
+        continueScrape(idpath=idpath, recordpath=recordpath, verbose=False)
+    )
     
     # Repeat the rate limit skip until all records scraped
     i = 1
@@ -205,13 +216,12 @@ def fullCollect(idpath, recordpath, set=None, start=None, end=None):
         # Trigger 600/min request limit on API (overrides 2000/day limit)
         requests.get(API_LINK)
 
-        # Wait out limit
-        time.sleep(180)
+        # Wait out limit (180 seconds, wait extra 20 for security)
+        time.sleep(200)
         requests.get(API_LINK) # Fail that resets cooldown
         requests.get(API_LINK).text[0:10] # Check it worked
         complete = continueScrape(idpath=idpath, recordpath=recordpath, verbose=False)
         i += 1
-    
     print(f"Scraped {count}/{count} records in {time.perf_counter() - t:.2f}s")
 
 def cleanDataset(inpath, outpath, strict=False):

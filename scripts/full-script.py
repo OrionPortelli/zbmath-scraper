@@ -7,8 +7,9 @@ end = '2015'
 
 # Collect records
 for s in sets:
-    py_client.fullCollect(idpath=f'data/{s}_id.json', recordpath=f'data/{s}_records.json', set=s, start=start, end=end)
-    
+    #py_client.fullCollect(idpath=f'data/{s}_ids.json', recordpath=f'data/{s}_records.json', set=s, start=start, end=end)
+    py_client.fullCollect(idpath=f'data/{s}_ids.json', recordpath=f'data/{s}_records.json', set=s, start=start, end=end, cont=True)
+
 # Clean datasets
-for s in sets:
-    py_client.cleanDataset(inpath=f'data/{s}_records.json', outpath=f'data/{s}_clean.json', strict=False)
+#for s in sets:
+#    py_client.cleanDataset(inpath=f'data/{s}_records.json', outpath=f'data/{s}_clean.json', strict=False)
