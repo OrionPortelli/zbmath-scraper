@@ -10,7 +10,6 @@ import time
 TAG_PREFIX = "{http://www.openarchives.org/OAI/2.0/}" # zbMATH API tag prefix
 OAI_DC_TAG = "{http://purl.org/dc/elements/1.1/}" # zbMATH API OAI_DC tag prefix
 ID_PREFIX = len("oai:zbmath.org:") # Num characters before an identifier
-GET_RECORD_PREFIX = f"{api_client.API_ROOT}GetRecord&identifier=oai:zbmath.org:"
 
 def getIdentifiers(outpath="data/ids.json", set=None, start=None, end=None, verbose=True):
     """
@@ -215,16 +214,18 @@ def fullCollect(idpath, recordpath, set=None, start=None, end=None):
     
     print(f"Scraped {count}/{count} records in {time.perf_counter() - t:.2f}s")
 
-def cleanDataset(inpath, outpath):
+def cleanDataset(inpath, outpath, strict=False):
     """
     Cleans the date and language fields of a set of records using the zbMATH API.
 
     Args:
         inpath: String filepath for the complete list of dirty input records
         outpath: String filepath for the output list of cleaned records
+        strict: True if using zbMATH API for all records (slow), False for fast clean
     """
     print("Cleaning record dates & languages:")
     t = time.perf_counter()
+    clean = cleanRecord if strict else fastClean
 
     # Load scraped records
     with open(inpath) as j:
@@ -235,7 +236,8 @@ def cleanDataset(inpath, outpath):
         out.format_records(records['set'], records['start'], records['end'], records['count'])
 
         # Write first record without preceeding comma
-        r = cleanRecord(records['records'][0])
+        #r = cleanRecord(records['records'][0]) if strict else fastClean(records['records'][0])
+        r = clean(records['records'][0])
         out.add_record(json.dumps(r))
 
         # Iterate over records to retrieve fields
@@ -246,7 +248,8 @@ def cleanDataset(inpath, outpath):
                 print(f"Cleaned {i}/{records['count']}")
             
             # Create request URL using prefix template
-            r = cleanRecord(r)
+            #r = cleanRecord(r) if strict else fastClean(r)
+            r = clean(r)
             out.add_comma()
             out.add_record(json.dumps(r))
     print(f"Cleaned {records['count']} records in {time.perf_counter() - t:.2f}s")
@@ -260,14 +263,31 @@ def cleanRecord(record):
         record: Dictionary record to be cleaned
     """
     DISCLAIMER = "zbMATH Open Web Interface contents unavailable due to conflicting licenses."
+    GET_RECORD_PREFIX = f"{api_client.API_ROOT}GetRecord&identifier=oai:zbmath.org:"
+
     req_url = f"{GET_RECORD_PREFIX}{record['id']}&metadataPrefix=oai_dc"
     xml = requests.get(req_url).content
     root = etree.fromstring(xml)[2][0][1][0]
+
     record['date'] = int(root.find(f"{OAI_DC_TAG}date").text)
     lang = root.find(f"{OAI_DC_TAG}language").text
     if lang != DISCLAIMER:
         record['language'] = root.find(f"{OAI_DC_TAG}language").text
-    #elif len(record['language']) > 20:
-    #    lang = record['language']
-    #    record['language'] = lang[:lang.index('\n')]
+    elif '\n' in record['language']:
+        lang = record['language']
+        record['language'] = lang[:lang.index('\n')]
     return record
+
+def fastClean(record):
+    """
+    Faster version of cleanRecord which cleans an individual records using the
+    zbMATH API only if the date is wrong. Language manually corrected.
+    """
+    # Arbitrary date range, a false trigger is better than a missing one
+    if (record['date'] is None) or record['date'] < 1990 or record['date'] > 2025:
+        record = cleanRecord(record)
+    elif '\n' in record['language']:
+        lang = record['language']
+        record['language'] = lang[:lang.index('\n')]
+    return record
+    
